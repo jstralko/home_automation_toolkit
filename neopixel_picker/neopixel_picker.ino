@@ -60,13 +60,13 @@
     #define PIN                     11
     #define NUMPIXELS               90
     #define PIXEL_TYPE              NEO_GRB + NEO_KHZ800
-    #define TCS_LED_PIN             5       /* The digital pin connected to the TCS color sensor pin. 
-                                              Will control thurning the sensor's LED on and off */
-                                              
-    #define PROXIMITY_THRESHOLD     10000   /* The Threshold value to conside an object near and 
+    #define TCS_LED_PIN             5       /* The digital pin connected to the TCS color sensor pin.
+                                              Will control turning the sensor's LED on and off */
+
+    #define PROXIMITY_THRESHOLD     10000   /* The Threshold value to conside an object near and
                                                 attempt to read its color */
     #define ANIMATION_PERIOD_MS     300
-                                                
+
 
     #define GAMMATABLE_INDEX(rgb, c)       ((int)(((float)rgb / (float)c) * 255.0))
 
@@ -77,7 +77,7 @@
       #define DEBUG_PRINT(x)
       #define DEBUG_PRINT_INLINE(x)
     #endif
-    
+
 /*=========================================================================*/
 
 Adafruit_NeoPixel pixel = Adafruit_NeoPixel(NUMPIXELS, PIN, PIXEL_TYPE);
@@ -118,7 +118,7 @@ void setup(void)
 #ifdef DEBUG
   startSerial();
 #endif
-  
+
   DEBUG_PRINT(F("Adafruit Bluefruit Init"));
   DEBUG_PRINT(F("------------------------------------------------"));
 
@@ -134,7 +134,7 @@ void setup(void)
   DEBUG_PRINT_INLINE( F("OK!") );
 
   tryToDoAFactoryReset();
-  
+
   DEBUG_PRINT(F("Preflight checks and initization setup"));
 
   DEBUG_PRINT(F("Calling Begin for TCS Sensor"));
@@ -169,17 +169,17 @@ void setup(void)
       delay(500);
   }
 
-  //Serial.println(F("***********************"));
+  DEBUG_PRINT(F("***********************"));
 
   // Set Bluefruit to DATA mode
   DEBUG_PRINT( F("Switching to DATA mode!") );
   ble.setMode(BLUEFRUIT_MODE_DATA);
 
-  //Serial.println(F("***********************"));
+  DEBUG_PRINT(F("***********************"));
 
 }
 
-void startSerial() 
+void startSerial()
 {
   while (!Serial);  // required for Flora & Micro
   delay(500);
@@ -219,11 +219,11 @@ void loop(void)
 
     DEBUG_PRINT_INLINE("\t\tAmbient = ");
     DEBUG_PRINT(ambient);
-  
+
     //Turn on LED and wait a bit for a good reading
     digitalWrite(TCS_LED_PIN, HIGH);
     delay(500);
-    
+
     uint16_t raw_r, raw_g, raw_b, raw_c;
     tcs.getRawData(&raw_r, &raw_g, &raw_b, &raw_c);
     r = gammatable[GAMMATABLE_INDEX(raw_r, raw_c)];
@@ -239,23 +239,23 @@ void loop(void)
 
     //Turn off the LED
     digitalWrite(TCS_LED_PIN, LOW);
-    //Do we need this pause? 
+    //Do we need this pause?
     //The docs say: "pause a bit to prevent constantly reading the color"
     //delay(1000);
-    
+
     uint32_t c = pixel.Color(r, g, b);
     colorWipe(c, 50);
 
     delay(1000);
-    
+
   } else {
     /* Wait for new data to arrive */
     uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
     if (len == 0) return;
-  
+
      /* Got a packet! */
      printHex(packetbuffer, len);
-  
+
     // Color
     if (packetbuffer[1] == 'C') {
       uint8_t red = packetbuffer[2];
@@ -268,7 +268,7 @@ void loop(void)
       //Serial.print(green, HEX);
       if (blue < 0x10) DEBUG_PRINT_INLINE("0");
       //Serial.println(blue, HEX);
-  
+
       for(uint8_t i=0; i<NUMPIXELS; i++) {
         pixel.setPixelColor(i, pixel.Color(red,green,blue));
       }
@@ -293,7 +293,7 @@ void initGammaTable() {
 void initPixels() {
   pixel.begin(); // This initializes the NeoPixel library.
 
-  //alternate between two colors
+  //alternate between blue and green colors
   for(uint8_t i=0; i<NUMPIXELS; i+=2) {
     uint32_t green = pixel.Color(0, 255, 0);
     uint32_t blue = pixel.Color(0, 0, 255);
@@ -302,7 +302,7 @@ void initPixels() {
       pixel.setPixelColor(i+1, blue);
     }
   }
-  
+
   pixel.show();
 }
 
