@@ -20,7 +20,9 @@ void setup() {
   pinMode(SENSORPIN, INPUT);     
   digitalWrite(SENSORPIN, HIGH); // turn on the pullup
   
-  Serial.begin(9600);
+  Serial.begin(115200);
+
+  Serial.println("started");
 }
 
 void loop(){
@@ -46,3 +48,4 @@ void loop(){
   }
   lastState = sensorState;
 }
+

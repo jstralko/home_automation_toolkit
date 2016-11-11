@@ -70,6 +70,7 @@
 
     #define GAMMATABLE_INDEX(rgb, c)       ((int)(((float)rgb / (float)c) * 255.0))
 
+    //#define DEBUG               /* uncomment to enable debugging, must be connected to a pc */
     #ifdef DEBUG
       #define DEBUG_PRINT(x)  Serial.println (x)
       #define DEBUG_PRINT_INLINE(x)  Serial.print (x)
