@@ -1,19 +1,20 @@
 /* 
  *  Stairs projet
  */
+#include <Adafruit_NeoPixel.h>
 
+#define NEOPIXEL_PIN 11
 #define LEDPIN 13
-  // Pin 13: Arduino has an LED connected on pin 13
-  // Pin 11: Teensy 2.0 has the LED on pin 11
-  // Pin  6: Teensy++ 2.0 has the LED on pin 6
-  // Pin 13: Teensy 3.0 has the LED on pin 13
-
 #define SENSORPIN 4
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(180, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // variables will change:
 int sensorState = 0, lastState=0;         // variable for reading the pushbutton status
 
 void setup() {
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);      
   // initialize the sensor pin as an input:
@@ -33,7 +34,7 @@ void loop(){
   // if it is, the sensorState is LOW:
   if (sensorState == LOW) {     
     // turn LED on:
-    digitalWrite(LEDPIN, HIGH);  
+    digitalWrite(LEDPIN, HIGH);
   } 
   else {
     // turn LED off:
@@ -42,10 +43,22 @@ void loop(){
   
   if (sensorState && !lastState) {
     Serial.println("Unbroken");
+    colorWipe(strip.Color(0, 0, 0), 0); // off??
+    
   } 
   if (!sensorState && lastState) {
     Serial.println("Broken");
+    colorWipe(strip.Color(255, 0, 0), 0); // Red
   }
   lastState = sensorState;
+}
+
+// Fill the dots one after the other with a color
+void colorWipe(uint32_t c, uint8_t wait) {
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, c);
+      strip.show();
+      delay(wait);
+  }
 }
 
