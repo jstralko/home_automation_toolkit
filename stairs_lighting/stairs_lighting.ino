@@ -34,10 +34,7 @@ void setup() {
   
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);
-
-  initPinForStair(0);
-  initPinForStair(1);
-  
+    
   Serial.begin(115200);
 }
 
@@ -78,17 +75,14 @@ void loop(){
   }
 }
 
-void initPinForStair(int index) {
-  // initialize the sensor pin as an input:
-  pinMode(stairs[index].pin, INPUT);     
-  digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
-}
-
 void initStair(int index, int pin, uint32_t color) {
   stairs[index].pin = pin;
   stairs[index].sensorState = 0;
   stairs[index].lastState = 0;
   stairs[index].color = color;
+    // initialize the sensor pin as an input:
+  pinMode(stairs[index].pin, INPUT);     
+  digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
 }
 
 // Fill the dots one after the other with a color
