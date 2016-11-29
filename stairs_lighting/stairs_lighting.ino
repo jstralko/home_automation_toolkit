@@ -29,11 +29,8 @@ void setup() {
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
-  initStair(0, STAIR_1_PIN);
-  stairs[0].color = strip.Color(255, 0, 0);
-
-  initStair(1, STAIR_2_PIN);
-  stairs[1].color = strip.Color(0, 255, 0);
+  initStair(0, STAIR_1_PIN, strip.Color(255, 0, 0));
+  initStair(1, STAIR_2_PIN, strip.Color(0, 255, 0));
   
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);
@@ -87,10 +84,11 @@ void initPinForStair(int index) {
   digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
 }
 
-void initStair(int index, int pin) {
+void initStair(int index, int pin, uint32_t color) {
   stairs[index].pin = pin;
   stairs[index].sensorState = 0;
   stairs[index].lastState = 0;
+  stairs[index].color = color;
 }
 
 // Fill the dots one after the other with a color
