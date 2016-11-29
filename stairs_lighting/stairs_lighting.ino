@@ -5,7 +5,19 @@
 
 #define NEOPIXEL_PIN 11
 #define LEDPIN 13
-#define SENSORPIN 4
+
+#define STAIR_1_PIN 4
+#define STAIR_2_PIN 5
+
+struct stair {
+  int pin;
+  int sensorState;
+  int lastState;
+  uint32_t color;
+};
+
+#define NUM_OF_STAIRS 2
+struct stair stairs[NUM_OF_STAIRS];
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
 // pixel power leads, add 300 - 500 Ohm resistor on first pixel's data input
@@ -13,48 +25,72 @@
 // on a live circuit...if you must, connect GND first.
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(180, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
-// variables will change:
-int sensorState = 0, lastState=0;         // variable for reading the pushbutton status
-
-void setup() {
+void setup() {  
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
+
+  initStair(0, STAIR_1_PIN);
+  stairs[0].color = strip.Color(255, 0, 0);
+
+  initStair(1, STAIR_2_PIN);
+  stairs[1].color = strip.Color(0, 255, 0);
+  
   // initialize the LED pin as an output:
-  pinMode(LEDPIN, OUTPUT);      
-  // initialize the sensor pin as an input:
-  pinMode(SENSORPIN, INPUT);     
-  digitalWrite(SENSORPIN, HIGH); // turn on the pullup
+  pinMode(LEDPIN, OUTPUT);
+
+  initPinForStair(0);
+  initPinForStair(1);
   
   Serial.begin(115200);
-
-  Serial.println("started");
 }
 
 void loop(){
-  // read the state of the pushbutton value:
-  sensorState = digitalRead(SENSORPIN);
 
-  // check if the sensor beam is broken
-  // if it is, the sensorState is LOW:
-  if (sensorState == LOW) {     
-    // turn LED on:
-    digitalWrite(LEDPIN, HIGH);
-  } 
-  else {
-    // turn LED off:
-    digitalWrite(LEDPIN, LOW); 
-  }
-  
-  if (sensorState && !lastState) {
-    Serial.println("Unbroken");
-    colorWipe(strip.Color(0, 0, 0), 0); // off??
+  for (int i = 0; i < NUM_OF_STAIRS; i++) {
+
+    int sensorState = stairs[i].sensorState;
+    int lastState = stairs[i].lastState;
     
-  } 
-  if (!sensorState && lastState) {
-    Serial.println("Broken");
-    colorWipe(strip.Color(255, 0, 0), 0); // Red
+    // read the state of the pushbutton value:
+    sensorState = digitalRead(stairs[i].pin);
+  
+    // check if the sensor beam is broken
+    // if it is, the sensorState is LOW:
+    /*if (sensorState == LOW) {     
+      // turn LED on:
+      digitalWrite(LEDPIN, HIGH);
+    } 
+    else {
+      // turn LED off:
+      digitalWrite(LEDPIN, LOW); 
+    }*/
+    
+    if (sensorState && !lastState) {
+      Serial.print("Unbroken for ");
+      Serial.println(i);
+      colorWipe(strip.Color(0, 0, 0), 0); // off
+      
+    } 
+    if (!sensorState && lastState) {
+      Serial.print("Broken for ");
+      Serial.println(i);
+      colorWipe(stairs[i].color, 0);
+    }
+    lastState = sensorState;
+    stairs[i].lastState = lastState;
   }
-  lastState = sensorState;
+}
+
+void initPinForStair(int index) {
+  // initialize the sensor pin as an input:
+  pinMode(stairs[index].pin, INPUT);     
+  digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
+}
+
+void initStair(int index, int pin) {
+  stairs[index].pin = pin;
+  stairs[index].sensorState = 0;
+  stairs[index].lastState = 0;
 }
 
 // Fill the dots one after the other with a color
