@@ -8,6 +8,7 @@
 
 #define STAIR_1_PIN 4
 #define STAIR_2_PIN 5
+#define DEBUG_STAIR_PIN STAIR_2_PIN
 
 struct stair {
   int pin;
@@ -47,17 +48,19 @@ void loop(){
     
     // read the state of the pushbutton value:
     sensorState = digitalRead(stairs[i].pin);
-  
-    // check if the sensor beam is broken
-    // if it is, the sensorState is LOW:
-    /*if (sensorState == LOW) {     
-      // turn LED on:
-      digitalWrite(LEDPIN, HIGH);
-    } 
-    else {
-      // turn LED off:
-      digitalWrite(LEDPIN, LOW); 
-    }*/
+
+    if (DEBUG_STAIR_PIN == stairs[i].pin) {
+      // check if the sensor beam is broken
+      // if it is, the sensorState is LOW:
+      if (sensorState == LOW) {     
+        // turn LED on:
+        digitalWrite(LEDPIN, HIGH);
+      } 
+      else {
+        // turn LED off:
+        digitalWrite(LEDPIN, LOW); 
+      }
+    }
     
     if (sensorState && !lastState) {
       Serial.print("Unbroken for ");
