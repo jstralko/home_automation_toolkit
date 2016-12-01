@@ -8,6 +8,9 @@
 
 #define STAIR_1_PIN 4
 #define STAIR_2_PIN 5
+#define STAIR_3_PIN 6
+
+#define DEBUG
 #define DEBUG_STAIR_PIN STAIR_2_PIN
 
 struct stair {
@@ -30,8 +33,9 @@ void setup() {
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
-  initStair(0, STAIR_1_PIN, strip.Color(255, 0, 0));
-  initStair(1, STAIR_2_PIN, strip.Color(0, 255, 0));
+  initStair(0, STAIR_1_PIN, strip.Color(255, 0, 0));    //red
+  initStair(1, STAIR_2_PIN, strip.Color(0, 255, 0));    //green
+  //initStair(2, STAIR_3_PIN, strip.Color(0, 0, 255));  //blue
   
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);
@@ -49,18 +53,9 @@ void loop(){
     // read the state of the pushbutton value:
     sensorState = digitalRead(stairs[i].pin);
 
-    if (DEBUG_STAIR_PIN == stairs[i].pin) {
-      // check if the sensor beam is broken
-      // if it is, the sensorState is LOW:
-      if (sensorState == LOW) {     
-        // turn LED on:
-        digitalWrite(LEDPIN, HIGH);
-      } 
-      else {
-        // turn LED off:
-        digitalWrite(LEDPIN, LOW); 
-      }
-    }
+#ifdef DEBUG
+    toggleDebugLED(sensorState, &stairs[i]);
+#endif
     
     if (sensorState && !lastState) {
       Serial.print("Unbroken for ");
@@ -78,6 +73,21 @@ void loop(){
   }
 }
 
+void toggleDebugLED(int sensorState, struct stair *stair) {
+      if (DEBUG_STAIR_PIN == stair->pin) {
+      // check if the sensor beam is broken
+      // if it is, the sensorState is LOW:
+      if (sensorState == LOW) {     
+        // turn LED on:
+        digitalWrite(LEDPIN, HIGH);
+      } 
+      else {
+        // turn LED off:
+        digitalWrite(LEDPIN, LOW); 
+      }
+    }
+}
+
 void initStair(int index, int pin, uint32_t color) {
   stairs[index].pin = pin;
   stairs[index].sensorState = 0;
@@ -86,7 +96,7 @@ void initStair(int index, int pin, uint32_t color) {
     // initialize the sensor pin as an input:
   pinMode(stairs[index].pin, INPUT);     
   digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
-}
+} 
 
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
