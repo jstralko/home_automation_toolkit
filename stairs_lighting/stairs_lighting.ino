@@ -10,13 +10,10 @@
 #define STAIR_2_PIN 5
 #define STAIR_3_PIN 6
 #define STAIR_4_PIN 7
-/*
 #define STAIR_5_PIN 8
-#define STAIR_6_PIN 9
-*/
 
 #define DEBUG
-#define DEBUG_STAIR_PIN STAIR_4_PIN
+#define DEBUG_STAIR_PIN STAIR_5_PIN
 
 struct stair {
   int pin;
@@ -26,7 +23,7 @@ struct stair {
   int active;
 };
 
-#define NUM_OF_STAIRS 4
+#define NUM_OF_STAIRS 5
 struct stair stairs[NUM_OF_STAIRS];
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
@@ -41,9 +38,10 @@ void setup() {
 
   initStair(0, STAIR_1_PIN, strip.Color(255, 0, 0));    //red
   initStair(1, STAIR_2_PIN, strip.Color(0, 255, 0));    //green
-  initStair(2, STAIR_3_PIN, strip.Color(0, 0, 255));  //blue
-  initStair(3, STAIR_4_PIN, strip.Color(255, 100, 0)); //orangish??
-
+  initStair(2, STAIR_3_PIN, strip.Color(0, 0, 255));    //blue
+  initStair(3, STAIR_4_PIN, strip.Color(255, 100, 0));  //orange
+  initStair(4, STAIR_5_PIN, strip.Color(75, 0, 255));  //purple
+   
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);
     
@@ -73,7 +71,11 @@ void loop(){
     if (!sensorState && lastState) {
       Serial.print("Broken for ");
       Serial.println(i);
-      colorWipe(stairs[i].color, 0);
+      if (i == 4) {
+        rainbow(0);
+      } else {
+        colorWipe(stairs[i].color, 0);
+      }
     }
     lastState = sensorState;
     stairs[i].lastState = lastState;
@@ -111,7 +113,35 @@ void initStair(int index, int pin, uint32_t color) {
     // initialize the sensor pin as an input:
   pinMode(stairs[index].pin, INPUT);     
   digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
-} 
+}
+
+void rainbow(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256; j++) {
+    for(i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    strip.show();
+    delay(wait);
+  }
+}
+
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if(WheelPos < 170) {
+    WheelPos -= 85;
+   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+}
 
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
