@@ -9,14 +9,14 @@
 #define STAIR_1_PIN 4
 #define STAIR_2_PIN 5
 #define STAIR_3_PIN 6
-/*
 #define STAIR_4_PIN 7
+/*
 #define STAIR_5_PIN 8
 #define STAIR_6_PIN 9
 */
 
 #define DEBUG
-#define DEBUG_STAIR_PIN STAIR_3_PIN
+#define DEBUG_STAIR_PIN STAIR_4_PIN
 
 struct stair {
   int pin;
@@ -26,7 +26,7 @@ struct stair {
   int active;
 };
 
-#define NUM_OF_STAIRS 3
+#define NUM_OF_STAIRS 4
 struct stair stairs[NUM_OF_STAIRS];
 
 // IMPORTANT: To reduce NeoPixel burnout risk, add 1000 uF capacitor across
@@ -42,6 +42,7 @@ void setup() {
   initStair(0, STAIR_1_PIN, strip.Color(255, 0, 0));    //red
   initStair(1, STAIR_2_PIN, strip.Color(0, 255, 0));    //green
   initStair(2, STAIR_3_PIN, strip.Color(0, 0, 255));  //blue
+  initStair(3, STAIR_4_PIN, strip.Color(255, 100, 0)); //orangish??
 
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);
