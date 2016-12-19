@@ -98,7 +98,7 @@ void loop(){
       }
       
       if (i == 4) {
-        rainbow(0);
+        rainbow(0, state.walkingDirection);
       } else {
         colorWipe(stairs[i].color, 0, state.walkingDirection);
       }
@@ -151,15 +151,27 @@ void initStair(int index, int pin, uint32_t color) {
   digitalWrite(stairs[index].pin, HIGH); // turn on the pullup
 }
 
-void rainbow(uint8_t wait) {
-  uint16_t i, j;
+void rainbow(uint8_t wait, int direct) {
+  if (direct == WALKING_DOWN) {
+    int16_t i, j;
 
-  for(j=0; j<256; j++) {
-    for(i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, Wheel((i+j) & 255));
+    for(j=0; j<256; j++) {
+      for(i=(strip.numPixels() - 1); i >= 0; i--) {
+        strip.setPixelColor(i, Wheel((i+j) & 255));
+      }
+      strip.show();
+      delay(wait);
     }
-    strip.show();
-    delay(wait);
+  } else {
+    uint16_t i, j;
+
+    for(j=0; j<256; j++) {
+      for(i=0; i<strip.numPixels(); i++) {
+        strip.setPixelColor(i, Wheel((i+j) & 255));
+      }
+      strip.show();
+      delay(wait);
+    }
   }
 }
 
