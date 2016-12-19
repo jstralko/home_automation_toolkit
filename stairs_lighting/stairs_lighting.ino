@@ -97,14 +97,16 @@ void loop(){
         state.firstStep = i;
         state.walkingDirection = i < 2 ? WALKING_UP : WALKING_DOWN; 
       }
-
-      state.firstStepTime = millis();
       
       if (i == 4) {
         rainbow(0);
       } else {
         colorWipe(stairs[i].color, 0, state.walkingDirection);
       }
+    }
+
+    if (state.firstStep == -1 && sensorState) {
+      state.firstStepTime = millis();
     }
     
     lastState = sensorState;
@@ -196,7 +198,6 @@ void colorWipe(uint32_t c, uint8_t wait, int direct) {
         strip.show();
         delay(wait);
       }
-      Serial.println("colorWipe done");
   } else {
     for(uint16_t i=0; i<strip.numPixels(); i++) {
         strip.setPixelColor(i, c);
