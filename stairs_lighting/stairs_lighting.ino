@@ -76,7 +76,6 @@ void loop(){
     int sensorState = stairs[i].sensorState;
     int lastState = stairs[i].lastState;
     
-    // read the state of the pushbutton value:
     sensorState = digitalRead(stairs[i].pin);
 
 #ifdef DEBUG
