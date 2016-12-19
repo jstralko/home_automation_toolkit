@@ -105,7 +105,7 @@ void loop(){
       }
     }
 
-    if (state.firstStep != -1 && sensorState) {
+    if (state.firstStep != -1 && !sensorState) {
       state.firstStepTime = millis();
     }
     
