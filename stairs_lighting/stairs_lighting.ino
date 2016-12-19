@@ -12,8 +12,19 @@
 #define STAIR_4_PIN 7
 #define STAIR_5_PIN 8
 
+#define WALKING_UP    1
+#define WALKING_DOWN  2
+#define WALKING_TIMEOUT 2000 
+
 #define DEBUG
 #define DEBUG_STAIR_PIN STAIR_5_PIN
+
+struct walking_state {
+  int firstStep;
+  long firstStepTime;
+  int walkingDirection;
+};
+struct walking_state state;
 
 struct stair {
   int pin;
@@ -44,11 +55,21 @@ void setup() {
    
   // initialize the LED pin as an output:
   pinMode(LEDPIN, OUTPUT);
-    
+
+  clearWalkingState();
+  
   Serial.begin(115200);
 }
 
 void loop(){
+
+  if (state.firstStep != -1) {
+    long elapsed =  millis() - state.firstStepTime;
+    //Serial.println(elapsed);
+    if (elapsed > WALKING_TIMEOUT) {
+     clearWalkingState();
+    }
+  }
 
   for (int i = 0; i < NUM_OF_STAIRS; i++) {
 
@@ -65,18 +86,27 @@ void loop(){
     if (sensorState && !lastState) {
       Serial.print("Unbroken for ");
       Serial.println(i);
-      colorWipe(strip.Color(0, 0, 0), 0); // off
+      colorWipe(strip.Color(0, 0, 0), 0, state.walkingDirection); // off
       
     } 
     if (!sensorState && lastState) {
       Serial.print("Broken for ");
       Serial.println(i);
+      
+      if (state.firstStep == -1) {
+        state.firstStep = i;
+        state.walkingDirection = i < 2 ? WALKING_UP : WALKING_DOWN; 
+      }
+
+      state.firstStepTime = millis();
+      
       if (i == 4) {
         rainbow(0);
       } else {
-        colorWipe(stairs[i].color, 0);
+        colorWipe(stairs[i].color, 0, state.walkingDirection);
       }
     }
+    
     lastState = sensorState;
     stairs[i].lastState = lastState;
   }
@@ -95,6 +125,11 @@ void toggleDebugLED(int sensorState, struct stair *stair) {
         digitalWrite(LEDPIN, LOW); 
       }
     }
+}
+
+void clearWalkingState() {
+    state.firstStep = -1;
+    state.walkingDirection = WALKING_UP;
 }
 
 void disableStair(int index)
@@ -144,11 +179,30 @@ uint32_t Wheel(byte WheelPos) {
 }
 
 // Fill the dots one after the other with a color
-void colorWipe(uint32_t c, uint8_t wait) {
-  for(uint16_t i=0; i<strip.numPixels(); i++) {
-      strip.setPixelColor(i, c);
-      strip.show();
-      delay(wait);
+void colorWipe(uint32_t c, uint8_t wait, int direct) {
+  if (direct == WALKING_DOWN) {
+      /*
+       * Okay, learned something today.
+       * You need to make this signed and not unsigned.
+       * Or the loop will cause the arduino to crash.
+       * Offical documentation from Adafruit:
+       * 
+       * Counting down to 0 with an unsigned integer (uint16_t) 
+       * causes an issue. (An unsigned integer will always be >=0, 
+       * thus causing an infinite loop.)
+       */
+      for(int16_t i = (strip.numPixels() - 1); i >= 0; i--) {
+        strip.setPixelColor(i, c);
+        strip.show();
+        delay(wait);
+      }
+      Serial.println("colorWipe done");
+  } else {
+    for(uint16_t i=0; i<strip.numPixels(); i++) {
+        strip.setPixelColor(i, c);
+        strip.show();
+        delay(wait);
+    }
   }
 }
 
