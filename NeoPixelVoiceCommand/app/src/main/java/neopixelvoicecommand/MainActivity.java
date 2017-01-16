@@ -16,6 +16,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -26,6 +27,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 import neopixelvoicecommand.R;
@@ -40,6 +42,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private boolean mIsScanPaused = true;
     private BleDevicesScanner mScanner;
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+    private AlertDialog mConnectingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -293,4 +296,48 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         }
     }
     // endregion
+
+    public void onClickDeviceConnect() {
+        stopScanning();
+        mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
+        //TODO: connect(device)
+    }
+
+    private void connect(BluetoothDevice device) {
+        boolean isConnecting = mBleManager.connect(this, device.getAddress());
+        if (isConnecting) {
+            showConnectionStatus(true);
+        }
+    }
+
+    private void showConnectionStatus(boolean enable) {
+        showStatusDialog(enable, R.string.scan_connecting);
+    }
+
+    private void showStatusDialog(boolean show, int stringId) {
+        if (show) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage(stringId);
+
+            // Show dialog
+            mConnectingDialog = builder.create();
+            mConnectingDialog.setCanceledOnTouchOutside(false);
+
+            mConnectingDialog.setOnKeyListener(new DialogInterface.OnKeyListener() {
+                @Override
+                public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {
+                    if (keyCode == KeyEvent.KEYCODE_BACK) {
+                        mBleManager.disconnect();
+                        mConnectingDialog.cancel();
+                    }
+                    return true;
+                }
+            });
+            mConnectingDialog.show();
+        } else {
+            if (mConnectingDialog != null) {
+                mConnectingDialog.cancel();
+            }
+        }
+    }
 }
