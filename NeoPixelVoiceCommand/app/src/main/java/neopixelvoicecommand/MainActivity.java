@@ -38,22 +38,25 @@ import neopixelvoicecommand.ble.BleUtils;
 
 public class MainActivity extends AppCompatActivity implements BleManager.BleManagerListener, BleUtils.ResetBluetoothAdapterListener, NavigationView.OnNavigationItemSelectedListener {
 
+    //Service Constant
     private static final String BLUEFRUIT_BORARD_NAME = "Adafruit Bluefruit LE";
     private static final String UUID_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
     private static final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-    private static final int kTxMaxCharacters = 20;
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    private static final int kTxMaxCharacters = 20;
+    private static final int kFirstTimeColor = 0x0000ff;
+
+    //Bluetooth
     private BluetoothGattService mUartService;
     private BleDevicesScanner mScanner;
     private BluetoothDevice mBlueFruitDevice;
     private BleManager mBleManager;
 
+    //UI
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private boolean mIsScanPaused = true;
     private AlertDialog mConnectingDialog;
-
-    private final static int kFirstTimeColor = 0x0000ff;
 
     @Override
     protected void onDestroy() {
@@ -67,8 +70,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
         super.onDestroy();
     }
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
