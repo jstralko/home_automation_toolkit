@@ -7,11 +7,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -27,22 +27,48 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import java.util.ArrayList;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.UUID;
 
-import neopixelvoicecommand.R;
 import neopixelvoicecommand.ble.BleDevicesScanner;
 import neopixelvoicecommand.ble.BleManager;
 import neopixelvoicecommand.ble.BleUtils;
 
 public class MainActivity extends AppCompatActivity implements BleManager.BleManagerListener, BleUtils.ResetBluetoothAdapterListener, NavigationView.OnNavigationItemSelectedListener {
 
-    private static final String TAG = "NeopixelVoiceCommand";
-    private BleManager mBleManager;
-    private boolean mIsScanPaused = true;
+    private static final String BLUEFRUIT_BORARD_NAME = "Adafruit Bluefruit LE";
+    private static final String UUID_TX = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    private static final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    private static final int kTxMaxCharacters = 20;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private BluetoothGattService mUartService;
     private BleDevicesScanner mScanner;
+    private BluetoothDevice mBlueFruitDevice;
+    private BleManager mBleManager;
+
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+    private boolean mIsScanPaused = true;
     private AlertDialog mConnectingDialog;
+
+    private final static int kFirstTimeColor = 0x0000ff;
+
+    @Override
+    protected void onDestroy() {
+        // Stop ble adapter reset if in progress
+        BleUtils.cancelBluetoothAdapterReset();
+
+        // Clean
+        if (mConnectingDialog != null) {
+            mConnectingDialog.cancel();
+        }
+
+        super.onDestroy();
+    }
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -232,7 +258,18 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     public void onServicesDiscovered() {
-        Log.d(TAG, "services discovered");
+        Log.d(TAG, "onServicesDiscovered");
+        mUartService = mBleManager.getGattService(UUID_SERVICE);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                showConnectionStatus(false);
+                Snackbar.make(findViewById(R.id.fab), "Connected to Bluefruit Board", Snackbar.LENGTH_LONG)
+                                      .setAction("Action", null).show();
+                sendColorToDevice();
+            }
+        });
     }
 
     @Override
@@ -279,7 +316,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();
-                    Log.d(TAG, "Discovered device: " + (deviceName != null ? deviceName : "<unknown>"));
+                    if (BLUEFRUIT_BORARD_NAME.equals(deviceName) && mBlueFruitDevice == null) {
+                        mBlueFruitDevice = device;
+                        connectToDevice();
+                    } else {
+                        Log.d(TAG, "Discovered device: " + (deviceName != null ? deviceName : "<unknown>"));
+                    }
                 }
             });
 
@@ -297,10 +339,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
     // endregion
 
-    public void onClickDeviceConnect() {
+    public void connectToDevice() {
         stopScanning();
         mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
-        //TODO: connect(device)
+        connect(mBlueFruitDevice);
     }
 
     private void connect(BluetoothDevice device) {
@@ -339,5 +381,65 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 mConnectingDialog.cancel();
             }
         }
+    }
+
+    // region Send Data to UART
+    protected void sendData(String text) {
+        final byte[] value = text.getBytes(Charset.forName("UTF-8"));
+        sendData(value);
+    }
+
+    protected void sendData(byte[] data) {
+        if (mUartService != null) {
+            // Split the value into chunks (UART service has a maximum number of characters that can be written )
+            for (int i = 0; i < data.length; i += kTxMaxCharacters) {
+                final byte[] chunk = Arrays.copyOfRange(data, i, Math.min(i + kTxMaxCharacters, data.length));
+                mBleManager.writeService(mUartService, UUID_TX, chunk);
+            }
+        } else {
+            Log.w(TAG, "Uart Service not discovered. Unable to send data");
+        }
+    }
+
+    // Send data to UART and add a byte with a custom CRC
+    protected void sendDataWithCRC(byte[] data) {
+
+        // Calculate checksum
+        byte checksum = 0;
+        for (byte aData : data) {
+            checksum += aData;
+        }
+        checksum = (byte) (~checksum);       // Invert
+
+        // Add crc to data
+        byte dataCrc[] = new byte[data.length + 1];
+        System.arraycopy(data, 0, dataCrc, 0, data.length);
+        dataCrc[data.length] = checksum;
+
+        // Send it
+        Log.d(TAG, "Send to UART: " + BleUtils.bytesToHexWithSpaces(dataCrc));
+        sendData(dataCrc);
+    }
+    // endregion
+
+    public void sendColorToDevice() {
+        // Send selected color !Crgb
+        byte r = (byte) ((kFirstTimeColor >> 16) & 0xFF);
+        byte g = (byte) ((kFirstTimeColor >> 8) & 0xFF);
+        byte b = (byte) ((kFirstTimeColor >> 0) & 0xFF);
+
+        ByteBuffer buffer = ByteBuffer.allocate(2 + 3 * 1).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+
+        // prefix
+        String prefix = "!C";
+        buffer.put(prefix.getBytes());
+
+        // values
+        buffer.put(r);
+        buffer.put(g);
+        buffer.put(b);
+
+        byte[] result = buffer.array();
+        sendDataWithCRC(result);
     }
 }
