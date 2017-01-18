@@ -449,18 +449,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         sendDataWithCRC(result);
     }
 
+    /* The following colors are supported:
+     * 'red', 'blue', 'green', 'black', 'white', 'gray', 'cyan', 'magenta',
+     * 'yellow', 'lightgray', 'darkgray', 'grey', 'lightgrey', 'darkgrey',
+     * 'aqua', 'fuchsia', 'lime', 'maroon', 'navy', 'olive', 'purple',
+     * 'silver', 'teal'.
+     */
     private void changeColor(String color) {
-        /*if (color.equalsIgnoreCase("red")) {
-            sendColorToDevice(Color.RGBToHSV(););
-        } else if (color.equalsIgnoreCase("green")) {
-
-        } else if (color.equalsIgnoreCase("blue")) {
-
-        } else if (color.equalsIgnoreCase("orange")) {
-
-        } else if (color.equalsIgnoreCase("yellow")) {
-
-        }*/
         int rgb = Color.parseColor(color);
         Integer rgbInt = new Integer(rgb);
         String hex = BleUtils.bytesToHexWithSpaces(new byte[] { rgbInt.byteValue() });
