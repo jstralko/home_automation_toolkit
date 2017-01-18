@@ -9,9 +9,12 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -30,6 +33,7 @@ import android.view.MenuItem;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import neopixelvoicecommand.ble.BleDevicesScanner;
@@ -44,8 +48,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private static final String UUID_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    private static final int VOICE_RECOGNITION_REQUEST_CODE = 1001;
     private static final int kTxMaxCharacters = 20;
-    private static final int kFirstTimeColor = 0x0000ff;
 
     //Bluetooth
     private BluetoothGattService mUartService;
@@ -60,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     @Override
     protected void onDestroy() {
+        Log.d(TAG, "OnDestroy called");
+
         // Stop ble adapter reset if in progress
         BleUtils.cancelBluetoothAdapterReset();
 
@@ -67,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (mConnectingDialog != null) {
             mConnectingDialog.cancel();
         }
+
+        mBlueFruitDevice = null;
 
         super.onDestroy();
     }
@@ -82,8 +90,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                speak();
             }
         });
 
@@ -174,10 +181,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         super.onPause();
     }
 
-    public void onStop() {
-        super.onStop();
-    }
-
     private void autostartScan() {
         if (BleUtils.getBleStatus(this) == BleUtils.STATUS_BLE_ENABLED) {
             // If was connected, disconnect
@@ -255,6 +258,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     @Override
     public void onDisconnected() {
         Log.d(TAG, "MainActivity onDisconnected");
+        //XXX: figure out why this is disconnecting after sending a data
+        mBlueFruitDevice = null;
     }
 
     @Override
@@ -268,7 +273,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 showConnectionStatus(false);
                 Snackbar.make(findViewById(R.id.fab), "Connected to Bluefruit Board", Snackbar.LENGTH_LONG)
                                       .setAction("Action", null).show();
-                sendColorToDevice();
+
             }
         });
     }
@@ -423,11 +428,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
     // endregion
 
-    public void sendColorToDevice() {
+    public void sendColorToDevice(int color) {
         // Send selected color !Crgb
-        byte r = (byte) ((kFirstTimeColor >> 16) & 0xFF);
-        byte g = (byte) ((kFirstTimeColor >> 8) & 0xFF);
-        byte b = (byte) ((kFirstTimeColor >> 0) & 0xFF);
+        byte r = (byte) ((color >> 16) & 0xFF);
+        byte g = (byte) ((color >> 8) & 0xFF);
+        byte b = (byte) ((color >> 0) & 0xFF);
 
         ByteBuffer buffer = ByteBuffer.allocate(2 + 3 * 1).order(java.nio.ByteOrder.LITTLE_ENDIAN);
 
@@ -442,5 +447,69 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
         byte[] result = buffer.array();
         sendDataWithCRC(result);
+    }
+
+    private void changeColor(String color) {
+        /*if (color.equalsIgnoreCase("red")) {
+            sendColorToDevice(Color.RGBToHSV(););
+        } else if (color.equalsIgnoreCase("green")) {
+
+        } else if (color.equalsIgnoreCase("blue")) {
+
+        } else if (color.equalsIgnoreCase("orange")) {
+
+        } else if (color.equalsIgnoreCase("yellow")) {
+
+        }*/
+        int rgb = Color.parseColor(color);
+        Integer rgbInt = new Integer(rgb);
+        String hex = BleUtils.bytesToHexWithSpaces(new byte[] { rgbInt.byteValue() });
+        Log.d(TAG, String.format("Send to device: %s", hex));
+        sendColorToDevice(rgb);
+
+    }
+
+    public void speak() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
+                getClass().getPackage().getName());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "NeoPixelVoiceCommand");
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
+
+        startActivityForResult(intent, VOICE_RECOGNITION_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == VOICE_RECOGNITION_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                List<String> list = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                String color = list.get(0);
+                changeColor(color);
+                Snackbar.make(findViewById(R.id.fab),
+                            String.format("Color: %s", color),
+                            Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+
+        } else if(resultCode == RecognizerIntent.RESULT_AUDIO_ERROR){
+            Snackbar.make(findViewById(R.id.fab), "Audio Error", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }else if(resultCode == RecognizerIntent.RESULT_CLIENT_ERROR){
+            Snackbar.make(findViewById(R.id.fab), "Client Error", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }else if(resultCode == RecognizerIntent.RESULT_NETWORK_ERROR){
+            Snackbar.make(findViewById(R.id.fab), "Network Error", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }else if(resultCode == RecognizerIntent.RESULT_NO_MATCH){
+            Snackbar.make(findViewById(R.id.fab), "No Match", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }else if(resultCode == RecognizerIntent.RESULT_SERVER_ERROR){
+            Snackbar.make(findViewById(R.id.fab), "Server Error", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }
