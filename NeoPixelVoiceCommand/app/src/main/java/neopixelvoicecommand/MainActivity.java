@@ -54,7 +54,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     //Bluetooth
     private BluetoothGattService mUartService;
     private BleDevicesScanner mScanner;
-    private BluetoothDevice mBlueFruitDevice;
     private BleManager mBleManager;
 
     //UI
@@ -73,8 +72,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (mConnectingDialog != null) {
             mConnectingDialog.cancel();
         }
-
-        mBlueFruitDevice = null;
 
         super.onDestroy();
     }
@@ -258,8 +255,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     @Override
     public void onDisconnected() {
         Log.d(TAG, "MainActivity onDisconnected");
-        //XXX: figure out why this is disconnecting after sending a data
-        mBlueFruitDevice = null;
     }
 
     @Override
@@ -322,9 +317,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();
-                    if (BLUEFRUIT_BORARD_NAME.equals(deviceName) && mBlueFruitDevice == null) {
-                        mBlueFruitDevice = device;
-                        connectToDevice();
+                    if (BLUEFRUIT_BORARD_NAME.equals(deviceName)) {
+                        connectToDevice(device);
                     } else {
                         Log.d(TAG, "Discovered device: " + (deviceName != null ? deviceName : "<unknown>"));
                     }
@@ -345,10 +339,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
     // endregion
 
-    public void connectToDevice() {
+    public void connectToDevice(BluetoothDevice device) {
         stopScanning();
         mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
-        connect(mBlueFruitDevice);
+        connect(device);
     }
 
     private void connect(BluetoothDevice device) {
