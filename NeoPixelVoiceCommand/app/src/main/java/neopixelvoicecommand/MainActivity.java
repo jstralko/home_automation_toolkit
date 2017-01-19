@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             public void run() {
                 showConnectionStatus(false);
                 Snackbar.make(findViewById(R.id.fab), "Connected to Bluefruit Board", Snackbar.LENGTH_LONG)
-                                      .setAction("Action", null).show();
+                        .setAction("Action", null).show();
 
             }
         });
@@ -318,7 +318,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();
                     if (BLUEFRUIT_BORARD_NAME.equals(deviceName)) {
-                        connectToDevice(device);
+                        if (mBleManager.canConnectToDevice()) {
+                            connectToDevice(device);
+                        }
                     } else {
                         Log.d(TAG, "Discovered device: " + (deviceName != null ? deviceName : "<unknown>"));
                     }
