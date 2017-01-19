@@ -456,12 +456,19 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
      * 'silver', 'teal'.
      */
     private void changeColor(String color) {
-        int rgb = Color.parseColor(color);
-        Integer rgbInt = new Integer(rgb);
-        String hex = BleUtils.bytesToHexWithSpaces(new byte[] { rgbInt.byteValue() });
-        Log.d(TAG, String.format("Send to device: %s", hex));
-        sendColorToDevice(rgb);
-
+        try {
+            int rgb = Color.parseColor(color);
+            Integer rgbInt = new Integer(rgb);
+            String hex = BleUtils.bytesToHexWithSpaces(new byte[]{rgbInt.byteValue()});
+            Log.d(TAG, String.format("Send to device: %s", hex));
+            sendColorToDevice(rgb);
+        } catch (IllegalArgumentException iae) {
+            Log.d(TAG, iae.getLocalizedMessage());
+            Snackbar.make(findViewById(R.id.fab),
+                            iae.getLocalizedMessage(),
+                            Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        }
     }
 
     public void speak() {
