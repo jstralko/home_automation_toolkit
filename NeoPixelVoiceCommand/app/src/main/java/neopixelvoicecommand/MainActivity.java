@@ -426,6 +426,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     }
     // endregion
 
+    public void sendRainbowColorToDevice() {
+        ByteBuffer buffer = ByteBuffer.allocate(2).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        buffer.put("!R".getBytes());
+        sendDataWithCRC(buffer.array());
+    }
+
     public void sendColorToDevice(int color) {
         // Send selected color !Crgb
         byte r = (byte) ((color >> 16) & 0xFF);
@@ -455,11 +461,16 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
      */
     private void changeColor(String color) {
         try {
-            int rgb = Color.parseColor(color);
-            Integer rgbInt = new Integer(rgb);
-            String hex = BleUtils.bytesToHexWithSpaces(new byte[]{rgbInt.byteValue()});
-            Log.d(TAG, String.format("Send to device: %s", hex));
-            sendColorToDevice(rgb);
+
+            if ("rainbow".equalsIgnoreCase(color)) {
+                sendRainbowColorToDevice();
+            } else {
+                int rgb = Color.parseColor(color);
+                Integer rgbInt = new Integer(rgb);
+                String hex = BleUtils.bytesToHexWithSpaces(new byte[]{rgbInt.byteValue()});
+                Log.d(TAG, String.format("Send to device: %s", hex));
+                sendColorToDevice(rgb);
+            }
         } catch (IllegalArgumentException iae) {
             Log.d(TAG, iae.getLocalizedMessage());
             Snackbar.make(findViewById(R.id.fab),

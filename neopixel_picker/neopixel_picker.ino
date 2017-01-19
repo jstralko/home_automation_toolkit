@@ -270,10 +270,15 @@ void loop(void)
       if (blue < 0x10) DEBUG_PRINT_INLINE("0");
       //Serial.println(blue, HEX);
 
-      for(uint8_t i=0; i<NUMPIXELS; i++) {
+      /*
+        for(uint8_t i=0; i<NUMPIXELS; i++) {
         pixel.setPixelColor(i, pixel.Color(red,green,blue));
       }
       pixel.show(); // This sends the updated pixel color to the hardware.
+      */
+      colorWipe(pixel.Color(red,green,blue), 0);
+    } else if (packetbuffer[1] == 'R') {
+      rainbow(50);
     }
   }
 
@@ -307,12 +312,38 @@ void initPixels() {
   pixel.show();
 }
 
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+   return pixel.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else if(WheelPos < 170) {
+    WheelPos -= 85;
+   return pixel.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return pixel.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  }
+}
+
 // Fill the dots one after the other with a color
 void colorWipe(uint32_t c, uint8_t wait) {
   for(uint16_t i=0; i<pixel.numPixels(); i++) {
       pixel.setPixelColor(i, c);
       pixel.show();
       delay(wait);
+  }
+}
+
+void rainbow(uint8_t wait) {
+  uint16_t i, j;
+  for(j=0; j<256; j++) {
+    for(i=0; i<pixel.numPixels(); i++) {
+      pixel.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    pixel.show();
+    delay(wait);
   }
 }
 
