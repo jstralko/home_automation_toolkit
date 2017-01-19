@@ -23,7 +23,6 @@ public class BleDevicesScanner {
     private final BluetoothAdapter mBluetoothAdapter;
     private volatile boolean mIsScanning = false;
     private Handler mHandler;
-    private List<UUID> mServicesToDiscover;
     private final Handler mMainThreadHandler = new Handler(Looper.getMainLooper());
     private final LeScansPoster mLeScansPoster;
 
@@ -34,17 +33,14 @@ public class BleDevicesScanner {
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, final byte[] scanRecord) {
                     synchronized (mLeScansPoster) {
-                        if (mServicesToDiscover == null || !Collections.disjoint(parseUuids(scanRecord), mServicesToDiscover)) {       // only process the devices with uuids in mServicesToDiscover
-                            mLeScansPoster.set(device, rssi, scanRecord);
-                            mMainThreadHandler.post(mLeScansPoster);
-                        }
+                        mLeScansPoster.set(device, rssi, scanRecord);
+                        mMainThreadHandler.post(mLeScansPoster);
                     }
                 }
             };
 
-    public BleDevicesScanner(BluetoothAdapter adapter, UUID[] servicesToDiscover, BluetoothAdapter.LeScanCallback callback) {
+    public BleDevicesScanner(BluetoothAdapter adapter, BluetoothAdapter.LeScanCallback callback) {
         mBluetoothAdapter = adapter;
-        mServicesToDiscover = servicesToDiscover == null ? null : Arrays.asList(servicesToDiscover);
         mLeScansPoster = new LeScansPoster(callback);
 
         mHandler = new Handler();

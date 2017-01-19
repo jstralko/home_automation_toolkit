@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (BleUtils.getBleStatus(this) == BleUtils.STATUS_BLE_ENABLED) {
             // If was connected, disconnect
             mBleManager.disconnect();
-            startScan(null);
+            startScan();
         }
     }
 
@@ -296,13 +296,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     private void resumeScanning() {
         if (mIsScanPaused) {
-            startScan(null);
+            startScan();
             mIsScanPaused = mScanner == null;
         }
     }
 
     // region Scan
-    private void startScan(final UUID[] servicesToScan) {
+    private void startScan() {
         Log.d(TAG, "startScan");
 
         // Stop current scanning (if needed)
@@ -313,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (BleUtils.getBleStatus(this) != BleUtils.STATUS_BLE_ENABLED) {
             Log.w(TAG, "startScan: BluetoothAdapter not initialized or unspecified address.");
         } else {
-            mScanner = new BleDevicesScanner(bluetoothAdapter, servicesToScan, new BluetoothAdapter.LeScanCallback() {
+            mScanner = new BleDevicesScanner(bluetoothAdapter, new BluetoothAdapter.LeScanCallback() {
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     final String deviceName = device.getName();
