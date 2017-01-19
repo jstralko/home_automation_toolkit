@@ -266,7 +266,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             @Override
             public void run() {
                 showConnectionStatus(false);
-                Snackbar.make(findViewById(R.id.fab), "Connected to Bluefruit Board", Snackbar.LENGTH_LONG)
+                Snackbar.make(findViewById(R.id.fab),
+                            String.format("Connected to %s", mBleManager.getDeviceName()),
+                            Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
 
             }

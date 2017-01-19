@@ -54,6 +54,13 @@ public class BleManager implements BleGattExecutor.BleExecutorListener {
         return (mConnectionState == STATE_DISCONNECTED);
     }
 
+    public String getDeviceName() {
+        if (mDevice != null) {
+            return mDevice.getName();
+        }
+        return "<Unknown>";
+    }
+
     public void setBleListener(BleManagerListener listener) {
         mBleListener = listener;
 
