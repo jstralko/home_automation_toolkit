@@ -67,7 +67,6 @@
                                                 attempt to read its color */
     #define ANIMATION_PERIOD_MS     300
 
-
     #define GAMMATABLE_INDEX(rgb, c)       ((int)(((float)rgb / (float)c) * 255.0))
 
     //#define DEBUG               /* uncomment to enable debugging, must be connected to a pc */
@@ -86,6 +85,10 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 Adafruit_VCNL4010 vcnl = Adafruit_VCNL4010();
 /* ...hardware SPI, using SCK/MOSI/MISO hardware SPI pins and then user selected CS/IRQ/RST */
 Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_RST);
+
+#define RAINBOW_OFF 0
+#define RAINBOW_ON  1
+int rainbow_state = 0;
 
 // A small helper
 void error(const __FlashStringHelper*err) {
@@ -221,6 +224,8 @@ void loop(void)
     DEBUG_PRINT_INLINE("\t\tAmbient = ");
     DEBUG_PRINT(ambient);
 
+    rainbow_state = 0;
+
     //Turn on LED and wait a bit for a good reading
     digitalWrite(TCS_LED_PIN, HIGH);
     delay(500);
@@ -252,8 +257,11 @@ void loop(void)
   } else {
     /* Wait for new data to arrive */
     uint8_t len = readPacket(&ble, BLE_READPACKET_TIMEOUT);
-    if (len == 0) return;
-
+    if (len == 0 && !rainbow_state) return;
+    else if (rainbow_state) {
+        rainbow(10);
+        return;
+    }
      /* Got a packet! */
      printHex(packetbuffer, len);
 
@@ -277,8 +285,10 @@ void loop(void)
       pixel.show(); // This sends the updated pixel color to the hardware.
       */
       colorWipe(pixel.Color(red,green,blue), 0);
+      rainbow_state = 0;
     } else if (packetbuffer[1] == 'R') {
-      rainbow(50);
+      rainbow(0);
+      rainbow_state = 1;
     }
   }
 

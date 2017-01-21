@@ -462,6 +462,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private void changeColor(String color) {
         try {
 
+            /*
+             * Rainbow is a all the colors with some
+             * animation. See neopixel_picker project for
+             * details on how it works.
+             */
             if ("rainbow".equalsIgnoreCase(color)) {
                 sendRainbowColorToDevice();
             } else {
