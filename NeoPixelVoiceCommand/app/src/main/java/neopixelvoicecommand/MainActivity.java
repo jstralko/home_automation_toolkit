@@ -432,6 +432,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         sendDataWithCRC(buffer.array());
     }
 
+    public void sendFireEffectToDevice() {
+        ByteBuffer buffer = ByteBuffer.allocate(2).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+        buffer.put("!F".getBytes());
+        sendDataWithCRC(buffer.array());
+    }
+
     public void sendColorToDevice(int color) {
         // Send selected color !Crgb
         byte r = (byte) ((color >> 16) & 0xFF);
@@ -469,6 +475,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
              */
             if ("rainbow".equalsIgnoreCase(color)) {
                 sendRainbowColorToDevice();
+            } else if ("fire".equalsIgnoreCase(color)) {
+                sendFireEffectToDevice();
             } else {
                 int rgb = Color.parseColor(color);
                 Integer rgbInt = new Integer(rgb);
