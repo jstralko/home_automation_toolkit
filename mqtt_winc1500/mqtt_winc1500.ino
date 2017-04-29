@@ -13,15 +13,14 @@
 #include "Adafruit_MQTT_Client.h"
 #include <WiFi101.h>
 
-
 /************************* WiFI Setup *****************************/
 #define WINC_CS   8
 #define WINC_IRQ  7
 #define WINC_RST  4
 #define WINC_EN   2     // or, tie EN to VCC
 
-char ssid[] = "yournetwork";     //  your network SSID (name)
-char pass[] = "yourpassword";    // your network password (use for WPA, or use as key for WEP)
+char ssid[] = "frigoffricky";     //  your network SSID (name)
+char pass[] = "rumham1969";    // your network password (use for WPA, or use as key for WEP)
 int keyIndex = 0;                // your network key Index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
@@ -30,8 +29,8 @@ int status = WL_IDLE_STATUS;
 
 #define AIO_SERVER      "io.adafruit.com"
 #define AIO_SERVERPORT  1883
-#define AIO_USERNAME    "adafruitiousername"
-#define AIO_KEY         "adafruitiokey"
+#define AIO_USERNAME    "gerbstralko"
+#define AIO_KEY         "8039edb08a0fe574097a021c0d0b4d9f8ba48f41"
 
 /************ Global State (you don't need to change this!) ******************/
 
@@ -46,17 +45,15 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO
 
 /****************************** Feeds ***************************************/
 
-// Setup a feed called 'photocell' for publishing.
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
-Adafruit_MQTT_Publish photocell = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/photocell");
+Adafruit_MQTT_Publish pub = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/hello");
 
-// Setup a feed called 'onoff' for subscribing to changes.
-Adafruit_MQTT_Subscribe onoffbutton = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/sonoff");
+// Feed subscribing to changes.
+Adafruit_MQTT_Subscribe sub = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/hello");
 
 /*************************** Sketch Code ************************************/
 
 #define LEDPIN 13
-
 
 void setup() {
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
@@ -64,7 +61,7 @@ void setup() {
   while (!Serial);
   Serial.begin(115200);
 
-  Serial.println(("Adafruit MQTT demo for WINC1500"));
+  Serial.println(("Adafruit MQTT for WINC1500"));
 
   // Initialise the Client
   Serial.print(("\nInit the WiFi module..."));
@@ -77,7 +74,7 @@ void setup() {
   Serial.println("ATWINC OK!");
 
   pinMode(LEDPIN, OUTPUT);
-  mqtt.subscribe(&onoffbutton);
+  mqtt.subscribe(&sub);
 }
 
 uint32_t x = 0;
@@ -91,24 +88,21 @@ void loop() {
   // this is our 'wait for incoming subscription packets' busy subloop
   Adafruit_MQTT_Subscribe *subscription;
   while ((subscription = mqtt.readSubscription(5000))) {
-    if (subscription == &onoffbutton) {
+    if (subscription == &sub) {
       Serial.print(("Got: "));
-      Serial.println((char *)onoffbutton.lastread);
+      Serial.println((char *)sub.lastread);
 
-      if (0 == strcmp((char *)onoffbutton.lastread, "OFF")) {
+      if (0 == strcmp((char *)sub.lastread, "OFF")) {
         digitalWrite(LEDPIN, LOW);
       }
-      if (0 == strcmp((char *)onoffbutton.lastread, "ON")) {
+      if (0 == strcmp((char *)sub.lastread, "ON")) {
         digitalWrite(LEDPIN, HIGH);
       }
     }
   }
 
   // Now we can publish stuff!
-  Serial.print(("\nSending photocell val "));
-  Serial.print(x);
-  Serial.print("...");
-  if (! photocell.publish(x++)) {
+  if (! pub.publish(x++)) {
     Serial.println(("Failed"));
   } else {
     Serial.println(("OK!"));
