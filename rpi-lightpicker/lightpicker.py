@@ -1,7 +1,20 @@
-# Import standard python modules.
-import random
 import sys
-import time
+
+#Load driver for your hardware, visualizer just for example
+from bibliopixel.drivers.LPD8806 import DriverLPD8806
+driver = DriverLPD8806(num = 160)
+
+#load the LEDStrip class
+from bibliopixel.led import *
+led = LEDStrip(driver)
+
+#load some cool shit right her'
+from strip_animations import *
+#anim = Rainbow(led)
+
+from bibliopixel.colors import *
+mycolors = [colors.Red, colors.Orange, colors.Yellow, colors.Green, colors.PapayaWhip, colors.Blue, colors.Purple, colors.Pink, colors.Honeydew, colors.Chocolate,
+		colors.NavajoWhite, colors.Olive, colors.DarkSalmon, colors.IndianRed, colors.Navy, colors.SeaGreen]
 
 # Import Adafruit IO MQTT client.
 from Adafruit_IO import MQTTClient
@@ -30,6 +43,9 @@ def message(client, feed_id, payload):
     # The feed_id parameter identifies the feed, and the payload parameter has
     # the new value.
     print 'Feed {0} received new value: {1}'.format(feed_id, payload)
+	led.fill(colors.Purple, 0, 160)
+	led.update()
+
 
 # Create an MQTT client instance.
 client = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
