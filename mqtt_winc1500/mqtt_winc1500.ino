@@ -43,7 +43,7 @@ int status = WL_IDLE_STATUS;
 // example for more information on possible values.
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-int delayval = 500; // delay for half a second
+int delayval = 100; // delay for half a second
 
 /************************* Adafruit.io Setup *********************************/
 
@@ -86,20 +86,20 @@ void setup() {
   
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
 
-  while (!Serial);
-  Serial.begin(115200);
+  //while (!Serial);
+  //Serial.begin(115200);
 
-  Serial.println(("Adafruit MQTT for WINC1500"));
+  //Serial.println(("Adafruit MQTT for WINC1500"));
 
   // Initialise the Client
-  Serial.print(("\nInit the WiFi module..."));
+  //Serial.print(("\nInit the WiFi module..."));
   // check for the presence of the breakout
   if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("WINC1500 not present");
+    //Serial.println("WINC1500 not present");
     // don't continue:
     while (true);
   }
-  Serial.println("ATWINC OK!");
+  //Serial.println("ATWINC OK!");
 
   pinMode(LEDPIN, OUTPUT);
   mqtt.subscribe(&sub);
@@ -117,11 +117,21 @@ void loop() {
   Adafruit_MQTT_Subscribe *subscription;
   while ((subscription = mqtt.readSubscription(5000))) {
     if (subscription == &sub) {
-      Serial.print(("Got: "));
-      Serial.println((char *)sub.lastread);
+      //Serial.print(("Got: "));
+      //Serial.println((char *)sub.lastread);
 
       if (0 == strcmp((char *)sub.lastread, "lights")) {
-        runLights();
+        runLights(pixels.Color(0,150,0));
+      } else if ((0 == strcmp((char *)sub.lastread, "Blue")) || (0 == strcmp((char *)sub.lastread, "blue"))) {
+        runLights(pixels.Color(0, 0, 255));
+      } else if ((0 == strcmp((char *)sub.lastread, "White")) || (0 == strcmp((char *)sub.lastread, "white"))) {
+        runLights(pixels.Color(127, 127, 127));
+      } else if ((0 == strcmp((char *)sub.lastread, "Red")) || (0 == strcmp((char *)sub.lastread, "red"))) {
+        runLights(pixels.Color(127, 0, 0));
+      } else if ((0 == strcmp((char *)sub.lastread, "Purple")) || (0 == strcmp((char *)sub.lastread, "purple"))) {
+        runLights(pixels.Color(252, 0, 222)); 
+      } else if (0 == strcmp((char *)sub.lastread, "Rainbow")) {
+         //rainbow(50);
       } else if (0 == strcmp((char *)sub.lastread, "lightsoff")) {
         turnOffLights();
       }
@@ -144,8 +154,8 @@ void MQTT_connect() {
 
   // attempt to connect to Wifi network:
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
+    //Serial.print("Attempting to connect to SSID: ");
+    //Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(ssid, pass);
 
@@ -162,29 +172,56 @@ void MQTT_connect() {
     return;
   }
 
-  Serial.print("Connecting to MQTT... ");
+  //Serial.print("Connecting to MQTT... ");
 
   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-    Serial.println(mqtt.connectErrorString(ret));
-    Serial.println("Retrying MQTT connection in 5 seconds...");
+    //Serial.println(mqtt.connectErrorString(ret));
+    //Serial.println("Retrying MQTT connection in 5 seconds...");
     mqtt.disconnect();
     delay(5000);  // wait 5 seconds
   }
-  Serial.println("MQTT Connected!");
+  //Serial.println("MQTT Connected!");
 }
 
-void runLights() {
+void runLights(uint32_t c) {
   
   for(int i=0;i<NUMPIXELS;i++){
 
     // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-    pixels.setPixelColor(i, pixels.Color(0,150,0)); // Moderately bright green color.
+    pixels.setPixelColor(i, c); // Moderately bright green color.
 
     pixels.show(); // This sends the updated pixel color to the hardware.
 
     delay(delayval); // Delay for a period of time (in milliseconds).
 
   }
+}
+
+void rainbow(uint8_t wait) {
+  uint16_t i, j;
+
+  for(j=0; j<256; j++) {
+    for(i=0; i<pixels.numPixels(); i++) {
+      pixels.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    pixels.show();
+    delay(wait);
+  }
+}
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+    return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if(WheelPos < 170) {
+    WheelPos -= 85;
+    return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
 }
 
 void turnOffLights() {

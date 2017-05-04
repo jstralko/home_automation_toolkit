@@ -1,8 +1,10 @@
 import sys
 
+LED_STRIP_LEN 	= 160
+
 #Load driver for your hardware, visualizer just for example
 from bibliopixel.drivers.LPD8806 import DriverLPD8806
-driver = DriverLPD8806(num = 160)
+driver = DriverLPD8806(num = LED_STRIP_LEN)
 
 #load the LEDStrip class
 from bibliopixel.led import *
@@ -43,7 +45,7 @@ def message(client, feed_id, payload):
     # The feed_id parameter identifies the feed, and the payload parameter has
     # the new value.
     print 'Feed {0} received new value: {1}'.format(feed_id, payload)
-	led.fill(colors.Purple, 0, 160)
+	led.fill(colors.Purple, 0, LED_STRIP_LEN)
 	led.update()
 
 
